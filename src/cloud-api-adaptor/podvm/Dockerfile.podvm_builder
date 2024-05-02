@@ -24,7 +24,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y && \
     apt-get install --no-install-recommends -y build-essential cloud-image-utils curl git gnupg \
         libdevmapper-dev libgpgme-dev lsb-release pkg-config qemu-kvm \
-        musl-tools unzip wget git && \
+        sudo musl-tools unzip wget git && \
     wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc && \
     echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-17 main" | tee -a /etc/apt/sources.list && \
     apt-get update && apt-get install -y clang-17 && \
