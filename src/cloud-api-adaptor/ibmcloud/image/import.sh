@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/bash
+#!/bin/bash
 # import.sh takes a podvm docker image reference and a cloud region
 # and creates a ibmcloud vpc image of the qcow2 image.
 # Requires IBMCLOUD_API_KEY to be set.
@@ -48,7 +48,6 @@ fi
 
 IBMCLOUD_API_ENDPOINT="$api" $script_dir/login.sh
 ibmcloud target -r "$region"
-ibmcloud target -g "IKS-CD"
 ibmcloud cos config auth --method iam >/dev/null
 ibmcloud cos config region --region "$bucket_region"
 
