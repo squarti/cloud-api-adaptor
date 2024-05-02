@@ -28,7 +28,7 @@ tools:
 git:
   guest-components:
     url: https://github.com/squarti/guest-components
-    reference: main
+    reference: ssq-fork
   kata-containers:
     url: https://github.com/squarti/kata-containers
     reference: fork-CCv0
