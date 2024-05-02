@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 #
 # (C) Copyright IBM Corp. 2022.
 # SPDX-License-Identifier: Apache-2.0
