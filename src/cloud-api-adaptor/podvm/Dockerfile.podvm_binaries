@@ -10,6 +10,7 @@ FROM ${BUILDER_IMG} AS podvm_builder
 
 ARG PODVM_DISTRO=ubuntu
 ARG AA_KBC=offline_fs_kbc
+ARG AGENT_POLICY=yes
 # If not provided, uses system architecture
 ARG ARCH
 #This is the name of the policy file under 
@@ -18,6 +19,7 @@ ARG DEFAULT_AGENT_POLICY_FILE=allow-all.rego
 
 ENV PODVM_DISTRO ${PODVM_DISTRO}
 ENV AA_KBC ${AA_KBC}
+ENV AGENT_POLICY ${AGENT_POLICY}
 ENV ARCH ${ARCH}
 ENV DEFAULT_AGENT_POLICY_FILE ${DEFAULT_AGENT_POLICY_FILE}
 
