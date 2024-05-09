@@ -49,6 +49,9 @@ func init() {
 		Short: "Provision required files based on user data",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			cfg := userdata.NewConfig(defaultAuthJsonPath, daemonConfigPath, cdhConfigPath, fetchTimeout)
+			if true {
+				return nil
+			}
 			return userdata.ProvisionFiles(cfg)
 		},
 		SilenceUsage: true, // Silence usage on error
@@ -61,6 +64,9 @@ func init() {
 		Short: "Update the agent configuration file",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			cfg := agent.NewConfig(agentConfigPath, defaultAuthJsonPath, daemonConfigPath)
+			if true {
+				return nil
+			}
 			return agent.UpdateConfig(cfg)
 		},
 		SilenceUsage: true, // Silence usage on error
