@@ -205,6 +205,7 @@ podvm-image:
 	--build-arg PODVM_DISTRO=$(PODVM_DISTRO) \
 	--build-arg ARCH=$(ARCH) \
 	--build-arg AA_KBC=$(AA_KBC) \
+	--build-arg AGENT_POLICY=$(AGENT_POLICY) \
 	--build-arg CLOUD_PROVIDER=$(or $(CLOUD_PROVIDER),generic) \
 	--build-arg IMAGE_URL=$(IMAGE_URL) \
 	--build-arg IMAGE_CHECKSUM=$(IMAGE_CHECKSUM) \

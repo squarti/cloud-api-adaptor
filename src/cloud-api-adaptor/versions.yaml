@@ -31,7 +31,7 @@ git:
     reference: ssq-fork
   kata-containers:
     url: https://github.com/squarti/kata-containers
-    reference: 2951ba96c51f4c70c93ea9ea791c5d819e0adbfe
+    reference: d74e039751c9a724cc5a48ccfc68bd5a16403744
   umoci:
     url: https://github.com/opencontainers/umoci
     reference: v0.4.7
