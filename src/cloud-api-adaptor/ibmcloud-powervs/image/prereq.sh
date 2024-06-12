@@ -2,7 +2,6 @@
 
 GO_VERSION="1.21.11"
 RUST_VERSION="1.72.0"
-SKOPEO_VERSION="1.5.0"
 
 # Install dependencies
 yum install -y curl protobuf-compiler libseccomp-devel openssl openssl-devel perl skopeo clang clang-devel
