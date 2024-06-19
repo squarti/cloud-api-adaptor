@@ -28,22 +28,11 @@ func TestUpdateAAKBCParams(t *testing.T) {
 
 	// Write a sample agent config data to the file
 	testAgentConfigData := `
-		# This disables signature verification which now defaults to true.
-		# We should consider a better solution. See #331 for more info
-		enable_signature_verification=false
-
-		# When using the agent-config.toml the KATA_AGENT_SERVER_ADDR env var seems to be ignored, so set it here
 		server_addr="unix:///run/kata-containers/agent.sock"
 
 		# This field sets up the KBC that attestation agent uses
 		# This is replaced in the makefile steps so do not set it manually
 		aa_kbc_params = "offline_fs_kbc::null"
-
-		# temp workaround for kata-containers/kata-containers#5590
-		[endpoints]
-		allowed = [
-		"AddARPNeighborsRequest",
-		]
 		guest_components_procs = "none"
 		`
 	if _, err := tmpFile.WriteString(testAgentConfigData); err != nil {
@@ -136,12 +125,10 @@ func TestWriteAgentConfig(t *testing.T) {
 	// Create an instance of AgentConfig
 	agentConfig := AgentConfig{
 		// Set the fields of AgentConfig
-		EnableSignatureVerification: true,
-		ServerAddr:                  "unix:///run/kata-containers/agent.sock",
-		AaKbcParams:                 "cc_kbc::http://192.168.1.2:8080",
-		ImageRegistryAuthFile:       "/etc/attestation-agent/auth.json",
-		Endpoints:                   Endpoints{Allowed: []string{"AddARPNeighborsRequest", "AddSwapRequest"}},
-		GuestComponentsProcs:        "none",
+		ServerAddr:            "unix:///run/kata-containers/agent.sock",
+		AaKbcParams:           "cc_kbc::http://192.168.1.2:8080",
+		ImageRegistryAuthFile: "/etc/attestation-agent/auth.json",
+		GuestComponentsProcs:  "none",
 	}
 
 	// Call the writeAgentConfig function
@@ -168,11 +155,6 @@ func TestParseAgentConfig(t *testing.T) {
 		t.Fatalf("failed to parse agent config file: %v", err)
 	}
 
-	// Verify that the config fields match the test data
-	if agentConfig.EnableSignatureVerification != false {
-		t.Fatalf("agentConfig.EnableSignatureVerification does not match test data: expected %v, got %v", false, agentConfig.EnableSignatureVerification)
-	}
-
 	if agentConfig.ServerAddr != "unix:///run/kata-containers/agent.sock" {
 		t.Fatalf("agentConfig.ServerAddr does not match test data: expected %v, got %v", "unix:///run/kata-containers/agent.sock", agentConfig.ServerAddr)
 	}
@@ -183,14 +165,6 @@ func TestParseAgentConfig(t *testing.T) {
 
 	if agentConfig.ImageRegistryAuthFile != "file:///etc/attestation-agent/auth.json" {
 		t.Fatalf("agentConfig.ImageRegistryAuthFile does not match test data: expected %v, got %v", "/etc/attestation-agent/auth.json", agentConfig.ImageRegistryAuthFile)
-	}
-
-	if agentConfig.Endpoints.Allowed[0] != "AddARPNeighborsRequest" {
-		t.Fatalf("agentConfig.Endpoints does not match test data: expected %v, got %v", "AddARPNeighborsRequest", agentConfig.Endpoints.Allowed[0])
-	}
-
-	if agentConfig.Endpoints.Allowed[1] != "AddSwapRequest" {
-		t.Fatalf("agentConfig.Endpoints does not match test data: expected %v, got %v", "AddSwapRequest", agentConfig.Endpoints.Allowed[1])
 	}
 
 	if agentConfig.GuestComponentsProcs != "none" {
@@ -218,9 +192,8 @@ func TestWriteAgentConfigNonExistentTomlEntry(t *testing.T) {
 	// Create an instance of AgentConfig
 	agentConfig := AgentConfig{
 		// Set the fields of AgentConfig
-		EnableSignatureVerification: true,
-		ServerAddr:                  "unix:///run/kata-containers/agent.sock",
-		AaKbcParams:                 "cc_kbc::http://192.168.1.2:8080",
+		ServerAddr:  "unix:///run/kata-containers/agent.sock",
+		AaKbcParams: "cc_kbc::http://192.168.1.2:8080",
 	}
 
 	// Call the writeAgentConfig function
@@ -235,7 +208,6 @@ func TestWriteAgentConfigNonExistentTomlEntry(t *testing.T) {
 
 	// Add the missing field to the agentConfig
 	newAgentConfig.ImageRegistryAuthFile = "file:///etc/attestation-agent/auth.json"
-	newAgentConfig.Endpoints.Allowed = []string{""}
 
 	// Update existing field
 	newAgentConfig.AaKbcParams = "cc_kbc::offline_kbc"
