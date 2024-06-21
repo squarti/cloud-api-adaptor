@@ -56,7 +56,7 @@ AGENT_POLICY=no SEALED_SECRET=no FORWARDER_PORT=2005 make build
 
 2. Download the qcow2 image and converts into ova type
 ```
-pvsadm image qcow2ova --image-name <name> --image-dist centos --image-url https://cloud.centos.org/centos/8-stream/ppc64le/images/CentOS-Stream-GenericCloud-8-latest.ppc64le.qcow2 --prep-template image-prep.template
+pvsadm image qcow2ova --image-name <name> --image-dist centos --image-url https://cloud.centos.org/centos/9-stream/ppc64le/images/CentOS-Stream-GenericCloud-9-latest.ppc64le.qcow2 --prep-template image-prep.template --image-size 20
 ```
 
 
