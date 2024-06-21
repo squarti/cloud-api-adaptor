@@ -38,7 +38,7 @@ mkdir -p  /root/go/src/github.com
 export GOPATH=/root/go
 cd /root/go/src/github.com
 
-git clone  https://github.com/Amulyam24/cloud-api-adaptor.git
+git clone -b ibmcloud-powervs https://github.com/Vaibhav-Nazare/cloud-api-adaptor.git
 cd cloud-api-adaptor/src/cloud-api-adaptor/ibmcloud-powervs/image
 AGENT_POLICY=no SEALED_SECRET=no FORWARDER_PORT=2005 make build
 ```
