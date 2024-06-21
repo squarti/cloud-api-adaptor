@@ -4,7 +4,7 @@ GO_VERSION="1.21.11"
 RUST_VERSION="1.72.0"
 
 # Install dependencies
-yum install -y curl protobuf-compiler libseccomp-devel openssl openssl-devel perl skopeo clang clang-devel
+yum install -y curl libseccomp-devel openssl openssl-devel perl skopeo clang clang-devel
 
 wget https://rpmfind.net/linux/centos-stream/9-stream/CRB/ppc64le/os/Packages/protobuf-compiler-3.14.0-13.el9.ppc64le.rpm
 yum install -y protobuf-compiler-3.14.0-13.el9.ppc64le.rpm
