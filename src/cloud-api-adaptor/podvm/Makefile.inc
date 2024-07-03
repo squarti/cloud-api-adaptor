@@ -75,10 +75,11 @@ OPA = $(FILES_DIR)/usr/local/bin/opa
 
 # Allow BINARIES to be overriden externally
 
-BINARIES ?= $(AGENT_PROTOCOL_FORWARDER) $(KATA_AGENT) $(PAUSE) $(ATTESTATION_AGENT) $(CONFIDENTIAL_DATA_HUB) $(API_SERVER_REST) $(PROCESS_USER_DATA) \
+BINARIES ?= $(AGENT_PROTOCOL_FORWARDER) $(KATA_AGENT) $(PAUSE) $(PROCESS_USER_DATA) \
 		$(OPA)
 
-$(shell sed -i "s|\(aa_kbc_params = \)\"[^\"]*\"|\1\"${AA_KBC}::${KBC_URI}\"|g" $(FILES_DIR)/etc/agent-config.toml)
+AA_KBC_PARAMS := $(if $(AA_KBC),$(AA_KBC)::$(KBC_URI),)
+$(shell sed -i "s|\(aa_kbc_params = \)\"[^\"]*\"|\1\"${AA_KBC_PARAMS}\"|g" $(FILES_DIR)/etc/agent-config.toml)
 
 KATA_CONTAINERS_SRC = $(ROOT_DIR)/../kata-containers
 KATA_AGENT_SRC = $(KATA_CONTAINERS_SRC)/src/agent

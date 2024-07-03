@@ -27,7 +27,7 @@ YQ_CHECKSUM_${ARCH} ?= $(YQ_CHECKSUM)
 ifeq ($(RELEASE_BUILD),true)
 	BUILTIN_CLOUD_PROVIDERS ?= aws azure ibmcloud vsphere
 else
-	BUILTIN_CLOUD_PROVIDERS ?= aws azure ibmcloud vsphere libvirt docker
+	BUILTIN_CLOUD_PROVIDERS ?= aws azure ibmcloud ibmcloud_powervs vsphere libvirt docker
 endif
 
 all: build
@@ -194,6 +194,7 @@ podvm-binaries:
 	--build-arg PODVM_DISTRO=$(PODVM_DISTRO) \
 	--build-arg ARCH=$(ARCH) \
 	--build-arg AA_KBC=$(AA_KBC) \
+	--build-arg AGENT_POLICY=$(AGENT_POLICY) \
 	$(if $(DEFAULT_AGENT_POLICY_FILE),--build-arg DEFAULT_AGENT_POLICY_FILE=$(DEFAULT_AGENT_POLICY_FILE),) \
 	$(DOCKER_OPTS) .
 	rm -rf .git
@@ -205,6 +206,8 @@ podvm-image:
 	--build-arg BINARIES_IMG=$(PODVM_BINARIES_IMAGE) \
 	--build-arg PODVM_DISTRO=$(PODVM_DISTRO) \
 	--build-arg ARCH=$(ARCH) \
+	--build-arg AA_KBC=$(AA_KBC) \
+	--build-arg AGENT_POLICY=$(AGENT_POLICY) \
 	--build-arg CLOUD_PROVIDER=$(or $(CLOUD_PROVIDER),generic) \
 	--build-arg IMAGE_URL=$(IMAGE_URL) \
 	--build-arg IMAGE_CHECKSUM=$(IMAGE_CHECKSUM) \
