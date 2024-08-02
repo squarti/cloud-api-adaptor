@@ -25,7 +25,7 @@ TEST_E2E_TIMEOUT ?= 60m
 RUN_TESTS ?= ''
 
 RESOURCE_CTRL ?= true
-YQ_CHECKSUM_${ARCH} ?= $(YQ_CHECKSUM)
+YQ_CHECKSUM_${YQ_ARCH} ?= $(YQ_CHECKSUM)
 # BUILTIN_CLOUD_PROVIDERS is used for binary build -- what providers are built in the binaries.
 ifeq ($(RELEASE_BUILD),true)
 	BUILTIN_CLOUD_PROVIDERS ?= aws azure ibmcloud vsphere
@@ -165,6 +165,8 @@ BUILDER_DOCKERFILE := Dockerfile.podvm_builder$(DOCKERFILE_SUFFIX)
 BINARIES_DOCKERFILE := Dockerfile.podvm_binaries$(DOCKERFILE_SUFFIX)
 PODVM_DOCKERFILE := Dockerfile.podvm$(DOCKERFILE_SUFFIX)
 
+YQ_ARCH ?= $(ARCH)
+
 podvm-builder:
 	docker buildx build -t $(PODVM_BUILDER_IMAGE) -f podvm/$(BUILDER_DOCKERFILE) \
 	--build-arg GO_VERSION=$(GO_VERSION) \
@@ -174,8 +176,8 @@ podvm-builder:
 	--build-arg PROTOC_VERSION=$(PROTOC_VERSION) \
 	--build-arg RUST_VERSION=$(RUST_VERSION) \
 	--build-arg YQ_VERSION=$(YQ_VERSION) \
-	--build-arg YQ_CHECKSUM=${YQ_CHECKSUM_$(ARCH)} \
-	--build-arg YQ_ARCH=$(ARCH) \
+	--build-arg YQ_CHECKSUM=${YQ_CHECKSUM_$(YQ_ARCH)} \
+	--build-arg YQ_ARCH=$(YQ_ARCH) \
 	--build-arg PROTOC_ARCH=$(if $(filter amd64,$(ARCH)),x86_64,s390_64) \
 	$(DOCKER_OPTS) .
 
