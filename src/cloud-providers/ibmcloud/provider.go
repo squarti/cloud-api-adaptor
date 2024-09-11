@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/netip"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/IBM/go-sdk-core/v5/core"
@@ -259,6 +260,36 @@ func (p *ibmcloudVPCProvider) CreateInstance(ctx context.Context, podName, sandb
 	imageID, err := p.selectImage(ctx, spec, instanceProfile)
 	if err != nil {
 		return nil, err
+	}
+
+	// TODO need a generic solution for mounting disks
+	if strings.HasPrefix(instanceProfile, "bx2d") {
+		logger.Printf("CreateInstance: disk userdData: %q", instanceProfile)
+
+		userData += `
+
+disk_setup:
+  /dev/vdb:
+    table_type: 'gpt'
+    layout:
+    - 100
+    overwrite: false
+
+fs_setup:
+  - label: /run/kata-containers
+    filesystem: 'ext4'
+    device: /dev/vdb1
+    overwrite: false
+
+runcmd:
+  - [ mkdir, /run/kata-containers ]
+
+mounts:
+  - ["/dev/vdb1", "/run/kata-containers"]
+
+mount_default_fields: [ None, None, "auto", "defaults,nofail", "0", "2" ]
+
+`
 	}
 
 	prototype := p.getInstancePrototype(instanceName, userData, instanceProfile, imageID)
