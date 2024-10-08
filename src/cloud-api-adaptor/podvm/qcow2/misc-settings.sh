@@ -42,6 +42,7 @@ if [[ "$CLOUD_PROVIDER" == "azure" || "$CLOUD_PROVIDER" == "generic" ]] && [[ "$
 
     sudo apt-get update
     sudo apt-get install -y --no-install-recommends libtss2-tctildr0 libtdx-attest
+    sudo apt-get dist-upgrade -y && apt-get clean
 fi
 
 # Setup oneshot systemd service for AWS and Azure to enable NAT rules
