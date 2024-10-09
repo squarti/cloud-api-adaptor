@@ -55,6 +55,39 @@ source "qemu" "ubuntu" {
 build {
   sources = ["source.qemu.ubuntu"]
 
+  provisioner "shell" {
+      remote_folder = "~"
+      inline = [
+        "sudo apt-get update",
+        "sudo apt-get dist-upgrade -y",
+        "sudo apt-get clean"
+      ]
+  }
+
+  provisioner "shell" {
+      remote_folder = "~"
+      expect_disconnect = true
+      skip_clean = true
+      inline = [
+        "echo 'Rebooting...'",
+        "sudo reboot"
+      ]
+  }
+
+  provisioner "shell" {
+      remote_folder = "~"
+      pause_before = "30s"
+      timeout      = "10s"
+      start_retry_timeout = "20m"
+      max_retries  = 5
+      inline = [
+        "echo 'Restarted...'",
+        "dpkg -l | tail -n +6 | grep -E 'linux-(image|modules)-[0-9]+' | awk '{print $2}' | grep -v $(uname -r) | xargs -I {} sudo apt purge -y {}",
+        "sudo apt-get autoremove -y",
+        "sudo apt-get autoclean -y"
+      ]
+  }
+
   provisioner "shell-local" {
     command = "tar cf toupload/files.tar files"
   }
