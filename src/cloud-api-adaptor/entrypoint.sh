@@ -102,6 +102,38 @@ gcp() {
         ${optionals}
 }
 
+ibm() {
+    one_of IBMCLOUD_API_KEY IBMCLOUD_IAM_PROFILE_ID
+
+    [[ "${POWERVS_MEMORY}" ]] && optionals+="-memory ${POWERVS_MEMORY} "
+    [[ "${POWERVS_PROCESSORS}" ]] && optionals+="-cpu ${POWERVS_PROCESSORS} "
+    [[ "${POWERVS_PROCESSOR_TYPE}" ]] && optionals+="-proc-type ${POWERVS_PROCESSOR_TYPE} "
+    [[ "${POWERVS_SYSTEM_TYPE}" ]] && optionals+="-sys-type ${POWERVS_SYSTEM_TYPE} "
+    [[ "${USE_PUBLIC_IP}" == "true" ]] && optionals+="-use-public-ip " # Use public IP for pod vm
+
+    set -x
+    exec cloud-api-adaptor ibm \
+        -iam-service-url "${IBMCLOUD_IAM_ENDPOINT}" \
+        -vpc-service-url "${IBMCLOUD_VPC_ENDPOINT}" \
+        -resource-group-id "${IBMCLOUD_RESOURCE_GROUP_ID}" \
+        -key-id "${IBMCLOUD_SSH_KEY_ID}" \
+        -image-id "${IBMCLOUD_PODVM_IMAGE_ID}" \
+        -profile-name "${IBMCLOUD_PODVM_INSTANCE_PROFILE_NAME}" \
+        -profile-list "${IBMCLOUD_PODVM_INSTANCE_PROFILE_LIST}" \
+        -zone-name "${IBMCLOUD_ZONE}" \
+        -primary-subnet-id "${IBMCLOUD_VPC_SUBNET_ID}" \
+        -primary-security-group-id "${IBMCLOUD_VPC_SG_ID}" \
+        -vpc-id "${IBMCLOUD_VPC_ID}" \
+        -service-instance-id ${POWERVS_SERVICE_INSTANCE_ID} \
+        -zone "${POWERVS_ZONE}" \
+        -powervs-image-id "${POWERVS_IMAGE_ID}" \
+        -network-id "${POWERVS_NETWORK_ID}" \
+        -ssh-key "${POWERVS_SSH_KEY_NAME}" \
+        -pods-dir /run/peerpod/pods \
+        ${optionals} \
+        -socket /run/peerpod/hypervisor.sock
+}
+
 ibmcloud() {
     one_of IBMCLOUD_API_KEY IBMCLOUD_IAM_PROFILE_ID
 
@@ -136,7 +168,7 @@ ibmcloud_powervs() {
     exec cloud-api-adaptor ibmcloud-powervs \
         -service-instance-id ${POWERVS_SERVICE_INSTANCE_ID} \
         -zone "${POWERVS_ZONE}" \
-        -image-id "${POWERVS_IMAGE_ID}" \
+        -powervs-image-id "${POWERVS_IMAGE_ID}" \
         -network-id "${POWERVS_NETWORK_ID}" \
         -ssh-key "${POWERVS_SSH_KEY_NAME}" \
         -pods-dir /run/peerpod/pods \
@@ -196,9 +228,9 @@ docker() {
 help_msg() {
     cat <<EOF
 Usage:
-	CLOUD_PROVIDER=aws|azure|gcp|ibmcloud|ibmcloud-powervs|libvirt|vsphere|docker $0
+	CLOUD_PROVIDER=aws|azure|gcp|ibm|ibmcloud|ibmcloud-powervs|libvirt|vsphere|docker $0
 or
-	$0 aws|azure|gcp|ibmcloud|ibmcloud-powervs|libvirt|vsphere|docker
+	$0 aws|azure|gcp|ibm|ibmcloud|ibmcloud-powervs|libvirt|vsphere|docker
 
 in addition all cloud provider specific env variables must be set and valid
 (CLOUD_PROVIDER is currently set to "$CLOUD_PROVIDER")
@@ -211,6 +243,8 @@ elif [[ "$CLOUD_PROVIDER" == "azure" ]]; then
     azure
 elif [[ "$CLOUD_PROVIDER" == "gcp" ]]; then
     gcp
+elif [[ "$CLOUD_PROVIDER" == "ibm" ]]; then
+    ibm
 elif [[ "$CLOUD_PROVIDER" == "ibmcloud" ]]; then
     ibmcloud
 elif [[ "$CLOUD_PROVIDER" == "ibmcloud-powervs" ]]; then
