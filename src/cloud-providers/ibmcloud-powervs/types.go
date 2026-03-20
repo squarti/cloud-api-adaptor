@@ -3,7 +3,11 @@
 
 package ibmcloud_powervs
 
-import "github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers/util"
+import (
+	"time"
+
+	"github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers/util"
+)
 
 type Config struct {
 	ApiKey            string
@@ -17,6 +21,7 @@ type Config struct {
 	ProcessorType     string
 	SystemType        string
 	UsePublicIP       bool
+	BuildTimeout      time.Duration
 }
 
 func (c Config) Redact() Config {

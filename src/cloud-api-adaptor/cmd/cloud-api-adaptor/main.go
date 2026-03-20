@@ -118,7 +118,7 @@ func (cfg *daemonConfig) Setup() (cmd.Starter, error) {
 		// Flags without environment variable support
 		flags.BoolVar(&disableTLS, "disable-tls", false, "Disable TLS encryption - use it only for testing")
 		flags.StringVar(&cfg.networkConfig.HostInterface, "host-interface", "", "Host Interface")
-		flags.IntVar(&cfg.networkConfig.VXLAN.MinID, "vxlan-min-id", vxlan.DefaultVXLANMinID, "Minimum VXLAN ID (VXLAN tunnel mode only")
+		reg.IntWithEnv(&cfg.networkConfig.VXLAN.MinID, "vxlan-min-id", vxlan.DefaultVXLANMinID, "VXLAN_MINID","Minimum VXLAN ID (VXLAN tunnel mode only")
 
 		cloud.ParseCmd(flags)
 	})

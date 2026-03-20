@@ -5,6 +5,7 @@ package ibmcloud
 
 import (
 	"strings"
+	"time"
 
 	provider "github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers"
 	"github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers/util"
@@ -133,6 +134,7 @@ type Config struct {
 	InstanceProfiles         instanceProfiles
 	InstanceProfileSpecList  []provider.InstanceTypeSpec
 	DisableCVM               bool
+	IPTimeout                time.Duration
 	ClusterID                string
 	Tags                     tags
 	DedicatedHostIDs         dedicatedHostIDs

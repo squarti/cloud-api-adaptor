@@ -5,6 +5,7 @@ package ibmcloud
 
 import (
 	"flag"
+	"time"
 
 	provider "github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers"
 )
@@ -34,6 +35,7 @@ func (_ *Manager) ParseCmd(flags *flag.FlagSet) {
 	reg.StringWithEnv(&ibmcloudVPCConfig.ClusterID, "cluster-id", "", "IBMCLOUD_CLUSTER_ID", "Cluster ID")
 
 	reg.BoolWithEnv(&ibmcloudVPCConfig.DisableCVM, "disable-cvm", true, "DISABLECVM", "Use non-CVMs for peer pods")
+	reg.DurationWithEnv(&ibmcloudVPCConfig.IPTimeout, "ip-timeout", 60*time.Second, "IBMCLOUD_IP_TIMEOUT", "Maximum timeout for getting the VSI IP")
 
 	// Flags without environment variable support (pass empty string for envVarName)
 	reg.StringWithEnv(&ibmcloudVPCConfig.CRTokenFileName, "cr-token-filename", "/var/run/secrets/tokens/vault-token", "", "Projected service account token")

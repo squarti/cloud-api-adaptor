@@ -388,6 +388,14 @@ func (s *redirector) AddSwapPath(ctx context.Context, req *pb.AddSwapPathRequest
 	return s.agentClient.AddSwapPath(ctx, req)
 }
 
+func (s *redirector) ReadContainerTerminationMessage(ctx context.Context, req *pb.ReadContainerTerminationMessageRequest) (res *pb.ReadContainerTerminationMessageResponse, err error) {
+
+	if err := s.Connect(ctx); err != nil {
+		return nil, err
+	}
+	return s.agentClient.ReadContainerTerminationMessage(ctx, req)
+}
+
 func (s *redirector) GetVolumeStats(ctx context.Context, req *pb.VolumeStatsRequest) (res *pb.VolumeStatsResponse, err error) {
 
 	if err := s.Connect(ctx); err != nil {

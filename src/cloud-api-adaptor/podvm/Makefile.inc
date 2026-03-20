@@ -18,6 +18,23 @@ include $(ROOT_DIR)Makefile.defaults
 
 IMAGE_PREFIX := podvm
 
+HOST_ARCH   := $(shell uname -m)
+ARCH        := $(or $(ARCH),$(HOST_ARCH))
+# Normalise x86_64 / amd64 for input ARCH
+ARCH        := $(subst amd64,x86_64,$(ARCH))
+DEB_ARCH    := $(subst x86_64,amd64,$(ARCH))
+LIBC        ?= $(if $(filter $(ARCH),s390x ppc64le),gnu,musl)
+RUST_ARCH   ?= $(subst ppc64le,powerpc64le,$(ARCH))
+RUST_TARGET := $(RUST_ARCH)-unknown-linux-$(LIBC)
+
+ifneq ($(HOST_ARCH),$(ARCH))
+    ifeq ($(CC),cc)
+		CC := $(ARCH)-linux-$(LIBC)-gcc
+        $(warning A foreign ARCH was passed, but no CC alternative. Using $(CC) as best guess)
+	endif
+RUST_FLAGS := CC=$(CC) ARCH=$(ARCH)
+endif
+
 # Auth json file for registry access. Used with skopeo
 AUTHFILE ?=
 
@@ -76,11 +93,11 @@ PROCESS_USER_DATA = $(FILES_DIR)/usr/local/bin/process-user-data
 # Allow BINARIES to be overridden externally
 
 BINARIES ?= \
+	$(KATA_AGENT) \
 	$(AGENT_PROTOCOL_FORWARDER) \
 	$(API_SERVER_REST) \
 	$(ATTESTATION_AGENT) \
 	$(CONFIDENTIAL_DATA_HUB) \
-	$(KATA_AGENT) \
 	$(PAUSE) \
 	$(PROCESS_USER_DATA)
 
@@ -94,6 +111,18 @@ UMOCI_SRC   = umoci
 PAUSE_SRC     = pause
 # Allows to override
 PAUSE_BUNDLE  ?= pause_bundle
+
+KATA_SRC := https://github.com/kata-containers/kata-containers
+KATA_SRC_REF := $(KATA_REF)
+KATA_CONTAINERS_SRC = $(ROOT_DIR)/../kata-containers
+KATA_AGENT_SRC = $(KATA_CONTAINERS_SRC)/src/agent
+KATA_AGENT_BUILD_TYPE = release
+
+# Static libseccomp is necessary for kata-agent
+# https://github.com/kata-containers/kata-containers/issues/5044#issuecomment-1239773921
+STATIC_LIBSECCOMP_BUILDER = $(KATA_CONTAINERS_SRC)/ci/install_libseccomp.sh
+STATIC_LIBSECCOMP_DIR     = $(abspath staticlib)
+STATIC_LIBSECCOMP         = $(STATIC_LIBSECCOMP_DIR)/kata-libseccomp/lib/libseccomp.a
 
 define pull_agent_artifact
 	$(eval $(call generate_tag,tag,$(KATA_REF),$(ARCH)))
@@ -155,10 +184,17 @@ $(PROCESS_USER_DATA): always
 	cd "$(ROOT_DIR)" && ARCH=$(ARCH) $(MAKE) process-user-data
 	install -D --compare "$(ROOT_DIR)/process-user-data" "$@"
 
-$(KATA_AGENT): $(FORCE_TARGET)
-	$(call pull_agent_artifact)
-	tar --zstd -xvpf kata-static-agent.tar.zst
-	install -D --compare "./usr/bin/kata-agent" "$@"
+$(KATA_AGENT): $(FORCE_TARGET) | $(STATIC_LIBSECCOMP)
+	cd "$(KATA_AGENT_SRC)" && $(RUST_FLAGS) $(MAKE) PULL_TYPE=guest-pull BUILD_TYPE=$(KATA_AGENT_BUILD_TYPE) SEALED_SECRET=${SEALED_SECRET} AGENT_POLICY=no LIBSECCOMP_LINK_TYPE=static LIBSECCOMP_LIB_PATH=$(dir $(STATIC_LIBSECCOMP))
+	install -D --compare "$(KATA_AGENT_SRC)/target/$(RUST_TARGET)/$(KATA_AGENT_BUILD_TYPE)/$(@F)" "$@"
+
+$(STATIC_LIBSECCOMP): $(KATA_CONTAINERS_SRC)
+	INSTALL_IN_GOPATH=false $(KATA_CONTAINERS_SRC)/ci/install_yq.sh
+	$(RUST_FLAGS) $(STATIC_LIBSECCOMP_BUILDER) $(STATIC_LIBSECCOMP_DIR)/kata-libseccomp $(STATIC_LIBSECCOMP_DIR)/kata-gperf
+
+$(KATA_CONTAINERS_SRC):
+	$(call git_clone_repo_ref,$(KATA_SRC),$(KATA_CONTAINERS_SRC),$(KATA_SRC_REF))
+	cd "$(KATA_CONTAINERS_SRC)" && pwd && git apply ../cloud-api-adaptor/patches/kata-containers/* && git status && git --no-pager diff
 
 # Skopeo package packages are available in RHEL/CentOS 8 or later and Ubuntu 20.10 or later
 $(SKOPEO_SRC):
@@ -201,9 +237,11 @@ $(API_SERVER_REST): $(FORCE_TARGET)
 	install -D --compare api-server-rest "$@"
 
 clean_sources:
+	[ -d "$(KATA_AGENT_SRC)" ] && cd "$(KATA_AGENT_SRC)" && git clean -xfd
 	[ -d "$(ROOT_DIR)" ] && cd "$(ROOT_DIR)" && git clean -xfd -e podvm
 	[ -d "$(PAUSE_SRC)" ] && cd "$(PAUSE_SRC)" && rm -rf *
 	[ -d "$(UMOCI_SRC)" ] && cd "$(UMOCI_SRC)" && git clean -xfd -e umoci
+	[ -d "$(KATA_CONTAINERS_SRC)" ] && cd "$(KATA_CONTAINERS_SRC)" && git clean -xfd
 
 .PHONY: force always
 always force:

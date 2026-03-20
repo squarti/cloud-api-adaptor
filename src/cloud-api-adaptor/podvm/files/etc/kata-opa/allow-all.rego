@@ -20,6 +20,7 @@ default PullImageRequest := true
 default ReadStreamRequest := true
 default RemoveContainerRequest := true
 default RemoveStaleVirtiofsShareMountsRequest := true
+default ReadContainerTerminationMessage := true
 default ReseedRandomDevRequest := true
 default ResumeContainerRequest := true
 default SetGuestDateTimeRequest := true

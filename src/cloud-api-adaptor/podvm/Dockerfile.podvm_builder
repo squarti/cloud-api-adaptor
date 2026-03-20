@@ -48,7 +48,12 @@ ADD https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${Y
 RUN echo "${YQ_CHECKSUM#sha256:} /usr/local/bin/yq" | sha256sum -c
 RUN chmod a+x /usr/local/bin/yq
 
-ENV PATH="/usr/local/go/bin:$PATH"
+ENV PATH="/root/.cargo/bin:/usr/local/go/bin:$PATH"
+
+ENV RUST_VERSION=1.91
+ADD https://sh.rustup.rs rustup
+RUN chmod a+x rustup && ./rustup -y --default-toolchain ${RUST_VERSION} \
+    && rustup target add x86_64-unknown-linux-musl && ln -sf /usr/bin/g++ /bin/musl-g++
 
 ADD https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip
 RUN unzip protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip -d /usr/local && rm -f protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip

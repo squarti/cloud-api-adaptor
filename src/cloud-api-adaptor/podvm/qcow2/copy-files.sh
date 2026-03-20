@@ -8,6 +8,9 @@ sudo cp /tmp/files/etc/aa-offline_fs_kbc-keys.json /etc/aa-offline_fs_kbc-keys.j
 sudo cp /tmp/files/etc/ocicrypt_config.json /etc/ocicrypt_config.json
 sudo cp -a /tmp/files/etc/containers/* /etc/containers/
 sudo cp -a /tmp/files/etc/systemd/* /etc/systemd/
+if [ -e /tmp/files/etc/modules-load.d ]; then
+	sudo cp -a /tmp/files/etc/modules-load.d/* /etc/modules-load.d/
+fi
 if [ -e /tmp/files/etc/aa-offline_fs_kbc-resources.json ]; then
 	sudo cp /tmp/files/etc/aa-offline_fs_kbc-resources.json /etc/aa-offline_fs_kbc-resources.json
 fi

@@ -100,7 +100,7 @@ func (p *ibmcloudPowerVSProvider) CreateInstance(ctx context.Context, podName, s
 				NetworkID: &p.serviceConfig.NetworkID,
 			}},
 		Memory:     core.Float64Ptr(memory),
-		Processors: core.Float64Ptr(processors),
+		Processors: core.Float64Ptr(processors / 4),
 		ProcType:   core.StringPtr(p.serviceConfig.ProcessorType),
 		SysType:    systemType,
 		UserData:   base64.StdEncoding.EncodeToString([]byte(userData)),
@@ -110,7 +110,7 @@ func (p *ibmcloudPowerVSProvider) CreateInstance(ctx context.Context, podName, s
 
 	pvsInstances, err := p.powervsService.instanceClient(ctx).Create(body)
 	if err != nil {
-		logger.Printf("failed to create an instance : %v", err)
+		logger.Printf("failed to create an instance: %s error: %v", instanceName, err)
 		return nil, err
 	}
 
@@ -121,27 +121,31 @@ func (p *ibmcloudPowerVSProvider) CreateInstance(ctx context.Context, podName, s
 	ins := (*pvsInstances)[0]
 	instanceID := *ins.PvmInstanceID
 
-	getctx, cancel := context.WithTimeout(ctx, 150*time.Second)
+	getctx, cancel := context.WithTimeout(ctx, p.serviceConfig.BuildTimeout)
 	defer cancel()
 
-	logger.Printf("Waiting for instance to reach state: ACTIVE")
+	logger.Printf("Waiting %s for instance: %s/%s to reach state: ACTIVE", p.serviceConfig.BuildTimeout.String(), instanceID, instanceName)
 	err = retry.Do(
 		func() error {
 			in, err := p.powervsService.instanceClient(getctx).Get(*ins.PvmInstanceID)
 			if err != nil {
-				return fmt.Errorf("failed to get the instance: %v", err)
+				return fmt.Errorf("failed to get the instance: %s : %v", instanceID, err)
 			}
 
 			if *in.Status == "ERROR" {
-				return fmt.Errorf("instance is in error state")
+				details := ""
+				if in.Fault != nil {
+					details = in.Fault.Details
+				}
+				return retry.Unrecoverable(fmt.Errorf("instance is in error state: %s", details))
 			}
 
 			if *in.Status == "ACTIVE" {
-				logger.Printf("instance is in desired state: %s", *in.Status)
+				logger.Printf("instance: %s is in desired state: %s", instanceID, *in.Status)
 				return nil
 			}
 
-			return fmt.Errorf("Instance failed to reach ACTIVE state")
+			return fmt.Errorf("instance: %s failed to reach ACTIVE state", instanceID)
 		},
 		retry.Context(getctx),
 		retry.Attempts(0),
@@ -149,13 +153,19 @@ func (p *ibmcloudPowerVSProvider) CreateInstance(ctx context.Context, podName, s
 	)
 
 	if err != nil {
-		logger.Print(err)
-		return nil, err
+		// Return an intance with no IPs so that a peerpods resource is created.
+		// This ensures that the VM is deleted eventually
+		logger.Printf("failed to get instance: %s : %v", instanceID, err)
+		return &provider.Instance{
+			ID:   instanceID,
+			Name: instanceName,
+			IPs:  make([]netip.Addr, 0),
+		}, nil
 	}
 
 	ips, err := p.getVMIPs(ctx, instanceID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get IPs for the instance : %v", err)
+		return nil, fmt.Errorf("failed to get IPs for the instance: %s : %v", instanceID, err)
 	}
 
 	return &provider.Instance{
@@ -169,7 +179,7 @@ func (p *ibmcloudPowerVSProvider) DeleteInstance(ctx context.Context, instanceID
 
 	err := p.powervsService.instanceClient(ctx).Delete(instanceID)
 	if err != nil {
-		logger.Printf("failed to delete an instance: %v", err)
+		logger.Printf("failed to delete an instance %s: %v", instanceID, err)
 		return err
 	}
 
@@ -193,7 +203,7 @@ func (p *ibmcloudPowerVSProvider) getVMIPs(ctx context.Context, instanceID strin
 	var ips []netip.Addr
 	ins, err := p.powervsService.instanceClient(ctx).Get(instanceID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the instance: %v", err)
+		return nil, fmt.Errorf("failed to get the instance %s error: %v", instanceID, err)
 	}
 
 	for i, network := range ins.Networks {
@@ -209,7 +219,7 @@ func (p *ibmcloudPowerVSProvider) getVMIPs(ctx context.Context, instanceID strin
 			}
 
 			ips = append(ips, ip)
-			logger.Printf("podNodeIP[%d]=%s", i, ip.String())
+			logger.Printf("podNodeIP[%d]=%s instance: %s", i, ip.String(), instanceID)
 		}
 	}
 

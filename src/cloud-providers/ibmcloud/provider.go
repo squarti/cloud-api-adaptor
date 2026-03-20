@@ -5,11 +5,13 @@ package ibmcloud
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/netip"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/IBM/go-sdk-core/v5/core"
@@ -182,11 +184,11 @@ func NewProvider(config *Config) (provider.Provider, error) {
 		return nil, err
 	}
 
-	sgID, err := fetchClusterSG(clusterV2, config.ClusterID)
-	if err != nil {
-		return nil, err
-	}
-	config.SecurityGroupIds = append(config.SecurityGroupIds, sgID)
+	// sgID, err := fetchClusterSG(clusterV2, config.ClusterID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// config.SecurityGroupIds = append(config.SecurityGroupIds, sgID)
 
 	provider := &ibmcloudVPCProvider{
 		vpc:           vpcV1,
@@ -224,11 +226,26 @@ func getClusterID() (string, error) {
 	}
 
 	clusterID, ok := cm.Data["cluster_id"]
-	if !ok {
-		return "", fmt.Errorf("could not find cluster_id key in %s config map in %s namespace", clusterInfoCMName, clusterInfoCMNamespace)
+	if ok {
+		return clusterID, nil
 	}
 
-	return clusterID, nil
+	clusterJSON, ok := cm.Data["cluster-config.json"]
+	if ok {
+		var clusterConfig map[string]interface{}
+		if err := json.Unmarshal([]byte(clusterJSON), &clusterConfig); err != nil {
+			return "", fmt.Errorf("failed to unmarshal cluster-config.json: %w", err)
+		}
+		if id, exists := clusterConfig["cluster_id"]; exists {
+			if clusterID, ok := id.(string); ok {
+				return clusterID, nil
+			}
+			return "", fmt.Errorf("cluster_id in cluster-config.json is not a string")
+		}
+		return "", fmt.Errorf("cluster_id not found in cluster-config.json")
+	}
+
+	return "", fmt.Errorf("could not find cluster_id key in %s config map in %s namespace", clusterInfoCMName, clusterInfoCMNamespace)
 }
 
 func fetchVPCDetails(vpcV1 *vpcv1.VpcV1, subnetID string) (vpcID string, resourceGroupID string, e error) {
@@ -429,7 +446,7 @@ func getIPs(instance *vpcv1.Instance, instanceID string, numInterfaces int) ([]n
 		}
 		ips = append(ips, ip)
 
-		logger.Printf("podNodeIP[%d]=%s", i, ip.String())
+		logger.Printf("podNodeIP[%d]=%s instance=%s", i, ip.String(), instanceID)
 	}
 
 	if len(ips) < numInterfaces {
@@ -463,7 +480,47 @@ func (p *ibmcloudVPCProvider) CreateInstance(ctx context.Context, podName, sandb
 		}
 	}
 
+	// TODO need a generic solution for mounting disks
+	if strings.HasPrefix(instanceProfile, "bx2d") {
+		logger.Printf("CreateInstance: disk userdData: %q", instanceProfile)
+
+		userData += `
+
+disk_setup:
+  /dev/vdb:
+    table_type: 'gpt'
+    layout:
+    - 100
+    overwrite: false
+
+fs_setup:
+  - label: /run/kata-containers
+    filesystem: 'ext4'
+    device: /dev/vdb1
+    overwrite: false
+
+mounts:
+  - ["/dev/vdb1", "/run/kata-containers"]
+
+mount_default_fields: [ None, None, "auto", "defaults,nofail", "0", "2" ]
+
+`
+	}
+
 	prototype := p.getInstancePrototype(instanceName, userData, instanceProfile, imageID)
+
+	if strings.HasPrefix(instanceProfile, "bz2") || strings.HasPrefix(instanceProfile, "mz2") {
+		var size int64 = 250
+		profile := "general-purpose"
+		prototype.BootVolumeAttachment = &vpcv1.VolumeAttachmentPrototypeInstanceByImageContext{
+			Volume: &vpcv1.VolumePrototypeInstanceByImageContext{
+				Capacity: &size,
+				Profile: &vpcv1.VolumeProfileIdentityByName{
+					Name: &profile,
+				},
+			},
+		}
+	}
 
 	logger.Printf("CreateInstance: name: %q", instanceName)
 
@@ -483,7 +540,11 @@ func (p *ibmcloudVPCProvider) CreateInstance(ctx context.Context, podName, sandb
 
 	var ips []netip.Addr
 
-	for retries := 0; retries < maxRetries; retries++ {
+	nRetries := int(p.serviceConfig.IPTimeout.Seconds()) / queryInterval
+	if maxRetries > nRetries {
+		nRetries = maxRetries
+	}
+	for retries := 0; retries < nRetries; retries++ {
 
 		ips, err = getIPs(vpcInstance, instanceID, numInterfaces)
 
@@ -498,7 +559,7 @@ func (p *ibmcloudVPCProvider) CreateInstance(ctx context.Context, podName, sandb
 
 		result, response, err := p.vpc.GetInstanceWithContext(ctx, &vpcv1.GetInstanceOptions{ID: &instanceID})
 		if err != nil {
-			logger.Printf("failed to get an instance : %v and the response is %s", err, response)
+			logger.Printf("failed to get an instance %s error: %v and the response is %s", instanceName, err, response)
 			return instance, err
 		}
 		vpcInstance = result
@@ -555,7 +616,7 @@ func (p *ibmcloudVPCProvider) createInstanceWithFallback(ctx context.Context, pr
 		)
 	}
 
-	return nil, fmt.Errorf("failed to create an instance: %w and the response is %s", err, resp)
+	return nil, fmt.Errorf("failed to create an instance %s error: %w and the response is %s", prototype.Name, err, resp)
 }
 
 // Select an instance profile based on the memory and vcpu requirements
@@ -674,7 +735,7 @@ func (p *ibmcloudVPCProvider) DeleteInstance(ctx context.Context, instanceID str
 	options.SetID(instanceID)
 	resp, err := p.vpc.DeleteInstanceWithContext(ctx, options)
 	if err != nil {
-		logger.Printf("failed to delete an instance: %v and the response is %v", err, resp)
+		logger.Printf("failed to delete an instance: %s error: %v and the response is %v", instanceID, err, resp)
 		return err
 	}
 
