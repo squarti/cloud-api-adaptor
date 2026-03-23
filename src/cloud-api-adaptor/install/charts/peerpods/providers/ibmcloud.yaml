@@ -54,6 +54,10 @@ providerConfigs:
     # (default: "https://iam.cloud.ibm.com/identity/token")
     # IBMCLOUD_IAM_ENDPOINT: "https://iam.cloud.ibm.com/identity/token"
 
+    # Maximum timeout for getting a VSI IP
+    # (default: "")
+    # IBMCLOUD_IP_TIMEOUT: ""
+
     # List of Image IDs, comma separated
     # (required)
     IBMCLOUD_PODVM_IMAGE_ID: ""

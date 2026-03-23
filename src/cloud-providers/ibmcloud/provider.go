@@ -499,7 +499,12 @@ func (p *ibmcloudVPCProvider) CreateInstance(ctx context.Context, podName, sandb
 
 	var ips []netip.Addr
 
-	for retries := 0; retries < maxRetries; retries++ {
+	nRetries := int(p.serviceConfig.IPTimeout.Seconds()) / queryInterval
+	if maxRetries > nRetries {
+		nRetries = maxRetries
+	}
+	for retries := 0; retries < nRetries; retries++ {
+
 
 		ips, err = getIPs(vpcInstance, instanceID, numInterfaces)
 

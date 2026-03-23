@@ -5,6 +5,7 @@ package ibmcloud
 
 import (
 	"flag"
+	"time"
 
 	provider "github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers"
 )
@@ -32,6 +33,7 @@ func (*Manager) ParseCmd(flags *flag.FlagSet) {
 	reg.StringWithEnv(&ibmcloudVPCConfig.KeyID, "key-id", "", "IBMCLOUD_SSH_KEY_ID", "SSH Key ID")
 	reg.StringWithEnv(&ibmcloudVPCConfig.VpcID, "vpc-id", "", "IBMCLOUD_VPC_ID", "VPC ID")
 	reg.StringWithEnv(&ibmcloudVPCConfig.ClusterID, "cluster-id", "", "IBMCLOUD_CLUSTER_ID", "Cluster ID")
+	reg.DurationWithEnv(&ibmcloudVPCConfig.IPTimeout, "ip-timeout", 20*time.Second, "IBMCLOUD_IP_TIMEOUT", "Maximum timeout for getting a VSI IP")
 
 	reg.BoolWithEnv(&ibmcloudVPCConfig.DisableCVM, "disable-cvm", true, "DISABLECVM", "Use non-CVMs for peer pods")
 
