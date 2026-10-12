@@ -16,21 +16,21 @@ systemctl mask systemd-pcrphase-initrd.service
 systemctl mask systemd-pcrphase-sysinit.service
 systemctl mask systemd-pcrphase.service
 
-if [[ "${ARCHITECTURE}" == "s390x" ]]; then
-	# enable cloud-init services (Ubuntu s390x only; Fedora does not ship cloud-init)
-	if [[ -f /usr/lib/systemd/system/cloud-init-local.service || \
-	      -f /lib/systemd/system/cloud-init-local.service ]]; then
-		systemctl enable cloud-init-local.service
-		# cloud-init.service was renamed to cloud-init-network.service in cloud-init 24.3.
-		# Enable whichever unit exists in the image.
-		if [[ -f /usr/lib/systemd/system/cloud-init-network.service || -f /lib/systemd/system/cloud-init-network.service ]]; then
-			systemctl enable cloud-init-network.service
-		else
-			systemctl enable cloud-init.service
-		fi
-		systemctl enable cloud-config.service
-		systemctl enable cloud-final.service
+# enable cloud-init services (Ubuntu only; Fedora does not ship cloud-init)
+if [[ -f /usr/lib/systemd/system/cloud-init-local.service || \
+      -f /lib/systemd/system/cloud-init-local.service ]]; then
+	systemctl enable cloud-init-local.service
+	# cloud-init.service was renamed to cloud-init-network.service in cloud-init 24.3.
+	# Enable whichever unit exists in the image.
+	if [[ -f /usr/lib/systemd/system/cloud-init-network.service || -f /lib/systemd/system/cloud-init-network.service ]]; then
+		systemctl enable cloud-init-network.service
+	else
+		systemctl enable cloud-init.service
+	fi
+	systemctl enable cloud-config.service
+	systemctl enable cloud-final.service
 
+	if [[ "${ARCHITECTURE}" == "s390x" ]]; then
 		# disable networkd-wait-online since NetworkManager-wait-online.service is used instead
 		systemctl disable systemd-networkd-wait-online.service
 	fi

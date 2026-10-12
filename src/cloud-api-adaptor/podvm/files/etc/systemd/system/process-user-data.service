@@ -4,7 +4,8 @@
 [Unit]
 Description=Process user data
 # some providers use cloud-init to provision config files, it does not matter if cloud-init disabled
-After=network.target cloud-init.service
+# cloud-init.service was renamed to cloud-init-network.service in cloud-init 24.3
+After=network.target cloud-init.service cloud-init-network.service
 DefaultDependencies=no
 
 
