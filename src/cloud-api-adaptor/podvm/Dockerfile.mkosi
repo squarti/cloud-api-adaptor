@@ -16,6 +16,8 @@ RUN apt-get update && \
 	systemd-repart \
 	kmod \
 	systemd-boot-efi \
+	grub-common \
+	grub-pc-bin \
 	libcryptsetup12 \
 	squashfs-tools \
 	systemd-ukify \

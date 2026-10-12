@@ -2,6 +2,11 @@ include ../Makefile.defaults
 include ./Makefile.inc
 
 SE_BOOT   ?= false
+# Set BIOS_BOOT=true to also make the x86 image bootable with legacy BIOS
+# (e.g. IBM Cloud gen-2 profiles such as bx2/bx2d). Applies to image and image-debug.
+BIOS_BOOT ?= false
+comma := ,
+BIOS_PROFILE := $(if $(filter $(BIOS_BOOT),true),$(comma)bios,)
 IS_DEBIAN := $(shell if grep -q 'ID_LIKE=debian' /etc/os-release; then echo "true"; else echo "false"; fi)
 
 REGISTRY ?= quay.io/confidential-containers
@@ -108,7 +113,7 @@ else
 	docker buildx build \
 		-f Dockerfile.mkosi \
 		-t $(PODVM_IMAGE) \
-		--build-arg PROFILE=production \
+		--build-arg PROFILE=production$(BIOS_PROFILE) \
 		--build-arg IMAGE_VERSION \
 		--build-arg MKOSI_VERSION \
 		--progress=plain \
@@ -135,7 +140,7 @@ else
 	docker buildx build \
 		-f Dockerfile.mkosi \
 		-t $(PODVM_IMAGE) \
-		--build-arg PROFILE=debug \
+		--build-arg PROFILE=debug$(BIOS_PROFILE) \
 		--build-arg IMAGE_VERSION \
 		--build-arg MKOSI_VERSION \
 		--progress=plain \
