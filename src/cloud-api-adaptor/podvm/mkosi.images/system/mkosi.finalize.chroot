@@ -66,6 +66,12 @@ fi
 if [[ "${BIOS_BOOT:-false}" == "true" ]]; then
 	echo "BIOS image: masking systemd-repart and scratch-storage units"
 	systemctl mask systemd-repart.service
-	systemctl mask scratch-storage.service
-	systemctl mask scratch-storage.path
+	# scratch-storage.service/.path are shipped as real files in podvm/files/,
+	# so systemctl mask (which creates a symlink) fails if the file already exists.
+	# Use ln -sf to force-replace them with /dev/null masks.
+	ln -sf /dev/null /etc/systemd/system/scratch-storage.service
+	ln -sf /dev/null /etc/systemd/system/scratch-storage.path
+	# Also remove the multi-user.target.wants symlink so the path watcher
+	# is not activated at boot.
+	rm -f /etc/systemd/system/multi-user.target.wants/scratch-storage.path
 fi
