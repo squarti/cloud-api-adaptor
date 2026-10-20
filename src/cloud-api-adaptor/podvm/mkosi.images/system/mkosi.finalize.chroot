@@ -57,3 +57,15 @@ else
 	systemctl enable process-user-data.service
 	# These units doesn't exist in regular and debug profiles
 fi
+
+# On BIOS images (e.g. IBM Cloud bx2/bx2d) the root is a plain read-write ext4
+# partition with no unallocated space for systemd-repart to carve out.  The
+# trusted_store scratch partition is not needed (scratch-storage.service checks
+# for a marker file anyway, but masking avoids the ~2m35s repart wait entirely).
+# The local NVMe (/dev/vdb on bx2d) is instead set up by cloud-init.
+if [[ "${BIOS_BOOT:-false}" == "true" ]]; then
+	echo "BIOS image: masking systemd-repart and scratch-storage units"
+	systemctl mask systemd-repart.service
+	systemctl mask scratch-storage.service
+	systemctl mask scratch-storage.path
+fi
